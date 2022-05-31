@@ -1,6 +1,7 @@
 use ethereum_abi::Abi;
 use ethereum_abi::Value;
 use primitive_types::H256;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs::File;
 use std::str::FromStr;
@@ -11,16 +12,13 @@ use web3::types::Log;
 use web3::types::TransactionId;
 use web3::types::H160;
 use web3_rust_wrapper::Web3Manager;
-use serde::{Serialize, Deserialize};
 
-
-#[derive(Debug,Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventToken {
     pub token_address: String,
     pub token_a: String,
     pub token_b: String,
 }
-
 
 #[tokio::main]
 async fn main() -> web3::Result<()> {
@@ -74,14 +72,18 @@ async fn main() -> web3::Result<()> {
                 .eth()
                 .transaction(TransactionId::Hash(l.transaction_hash.unwrap()))
                 .await
-                .unwrap()
+                // .unwrap()
                 .unwrap();
 
-            let from_addr = tx.from.unwrap_or(H160::zero());
-            let to_addr = tx.to.unwrap_or(H160::zero());
-            let value = tx.value;
-            let input = tx.input;
+            // let from_addr = tx.from.unwrap_or(H160::zero());
+            // let to_addr = tx.to.unwrap_or(H160::zero());
+            // let value = tx.value;
+            // let input = tx.input;
 
+            if let Some(transaction) = tx {
+                let value = transaction.value;
+                let input = transaction.input;
+            }
             //println!("from_addr: {:?}", from_addr);
             //println!("to_addr: {:?}", to_addr);
             //println!("value: {:?}", value);
@@ -126,15 +128,22 @@ async fn main() -> web3::Result<()> {
                 decoded_data[3].value
             );
 
-            /* 
-            let eventToken = EventToken {
-                token_address: decoded_data[0].value,
-                token_a: decoded_data[1].value,
-                token_b: decoded_data[2].value,
-            };
-
-            println!("{}", serde_json::to_string(&eventToken).unwrap());
-            */
+            if let (
+                Value::Address(token_address),
+                Value::Address(token_a),
+                Value::Address(token_b),
+            ) = (
+                decoded_data[0].value.clone(),
+                decoded_data[1].value.clone(),
+                decoded_data[2].value.clone(),
+            ) {
+                let event_token = EventToken {
+                    token_address: token_address.to_string(),
+                    token_a: token_a.to_string(),
+                    token_b: token_b.to_string(),
+                };
+                println!("{}", serde_json::to_string(&event_token).unwrap());
+            }
 
             /*
             if let Value::Address(addressValue) = value {
