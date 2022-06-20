@@ -35,12 +35,6 @@ async fn main() -> web3::Result<()> {
         )
         .await;
 
-    //let json_file_path = Path::new("tokens.json");
-    //let file = File::open(json_file_path).expect("file not found");
-    //let tokens: Vec<&mut EventToken>;// =  serde_json::from_reader(file).expect("error while reading");
-
-    let tokens: Vec<EventToken> = Vec::new();
-
     //let abi: Abi = load_abi_from_json("factoryabi.json");
     let router_abi = include_bytes!("../factoryabi.json");
     let router_address = "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3";
@@ -63,15 +57,24 @@ async fn main() -> web3::Result<()> {
         .await
         .expect("error creating the contract instance");
 
+    let lp_pair_reserves: (Uint, Uint, Uint) =
+        get_token_reserves(web3m, lp_pair_factory_instance).await;
+
+        
+    Ok(())
+}
+
+async fn get_token_reserves(
+    web3m: Web3Manager,
+    lp_pair_factory_instance: Contract<Http>,
+) -> (U256, U256, U256) {
     let lp_pair_reserves: (Uint, Uint, Uint) = web3m
         .query_contract(&lp_pair_factory_instance, "getReserves", ())
         .await
         .unwrap();
     println!("lp_pair_reserves: {:?}", lp_pair_reserves);
-    Ok(())
+    lp_pair_reserves
 }
-
-async fn get_token_reserves(token_address: &str) {}
 
 async fn init_web3_connection() -> Web3Manager {
     let web3_http_url = "https://speedy-nodes-nyc.moralis.io/84a2745d907034e6d388f8d6/bsc/testnet";
