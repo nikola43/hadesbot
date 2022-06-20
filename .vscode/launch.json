@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'eth_keypair_generator_rust'",
+            "name": "Debug executable 'hades'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=eth_keypair_generator_rust",
-                    "--package=eth_keypair_generator_rust"
+                    "--bin=hades",
+                    "--package=hades"
                 ],
                 "filter": {
-                    "name": "eth_keypair_generator_rust",
+                    "name": "hades",
                     "kind": "bin"
                 }
             },
@@ -25,16 +25,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'eth_keypair_generator_rust'",
+            "name": "Debug unit tests in executable 'hades'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=eth_keypair_generator_rust",
-                    "--package=eth_keypair_generator_rust"
+                    "--bin=hades",
+                    "--package=hades"
                 ],
                 "filter": {
-                    "name": "eth_keypair_generator_rust",
+                    "name": "hades",
                     "kind": "bin"
                 }
             },
