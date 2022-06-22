@@ -703,6 +703,7 @@ name = "hades"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "colored",
  "diesel",
  "dotenv",
  "ethereum_abi",
@@ -2472,9 +2473,9 @@ dependencies = [
 
 [[package]]
 name = "web3_rust_wrapper"
-version = "0.2.9"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43f0ec3cedcfdfec2a036a965ba1985bd821700f5f872e684490668507b6dea7"
+checksum = "e7444bc30d50463c48e422435b39cb13bb46712f0844e6aee0981272b1dbb92c"
 dependencies = [
  "chrono",
  "clearscreen",

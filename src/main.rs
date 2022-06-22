@@ -1,18 +1,9 @@
 use ethereum_abi::Abi;
-use ethereum_abi::Value;
-use primitive_types::H256;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs::File;
-use std::str::FromStr;
-use web3::contract::Contract;
-use web3::ethabi::Uint;
-use web3::futures::StreamExt;
-use web3::transports::Http;
-use web3::types::Log;
-use web3::types::TransactionId;
-use web3::types::H160;
-use web3::types::U256;
+use web3::types::{H160, H256};
+
 use web3_rust_wrapper::Web3Manager;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -25,6 +16,9 @@ pub struct EventToken {
 #[tokio::main]
 async fn main() -> web3::Result<()> {
     dotenv::dotenv().ok();
+    let mut has_liquidity: bool = false;
+    let trading_active: bool = false;
+    let buy_tx_ok: bool = false;
 
     let mut web3m: Web3Manager = init_web3_connection().await;
 
@@ -35,45 +29,63 @@ async fn main() -> web3::Result<()> {
         )
         .await;
 
-    //let abi: Abi = load_abi_from_json("factoryabi.json");
-    let router_abi = include_bytes!("../factoryabi.json");
+    let account: H160 = web3m.first_loaded_account();
+
+    let token_address = "0x84faf62eF06A038071acb87C74186f2CD85f0887";
+    let token_lp_address = "0x3174423695f51236822C8FB67C62d84056caE232";
     let router_address = "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3";
-    let router_instance: Contract<Http> = web3m
-        .instance_contract(router_address, router_abi)
-        .await
-        .expect("error creating the contract instance");
 
-    let factory_abi = include_bytes!("../routerabi.json");
-    let factory_address = "0xB7926C0430Afb07AA7DEfDE6DA862aE0Bde767bc";
-    let factory_instance: Contract<Http> = web3m
-        .instance_contract(factory_address, factory_abi)
-        .await
-        .expect("error creating the contract instance");
+    let router_instance = web3m.init_router().await;
+    let factory_instance = web3m.init_router_factory().await;
+    //    let lp_pair_instance = web3m.init_pair(token_lp_address).await;
+    let mut slippage = 0usize;
 
-    let lp_pair_abi = include_bytes!("../pairabi.json");
-    let lp_pair_factory_address = "0x5E2E7b76e56abc3A922aC2Ca75B3e84bC29D766d";
-    let lp_pair_factory_instance: Contract<Http> = web3m
-        .instance_contract(lp_pair_factory_address, lp_pair_abi)
-        .await
-        .expect("error creating the contract instance");
+    let value = "10000000000000";
+    //println!("value: {:?}", wei_to_eth(value));
 
-    let lp_pair_reserves: (Uint, Uint, Uint) =
-        get_token_reserves(web3m, lp_pair_factory_instance).await;
+    let path_address: Vec<&str> = vec![
+        "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", // BNB
+        token_address,
+    ];
 
-        
+    /*
+    let path_address: Vec<&str> = vec![
+        "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", // WAVAX
+        "0x7ef95a0FEE0Dd31b22626fA2e10Ee6A223F8a684", // TOKEN
+    ];
+    */
+
+    while !has_liquidity {
+        // CHECK LIQUIDITY
+        let lp_pair_instance = web3m.init_pair(token_lp_address).await;
+        has_liquidity = web3m.token_has_liquidity(lp_pair_instance).await;
+        println!("has_liquidity: {:?}", has_liquidity);
+
+        if has_liquidity {
+            while !buy_tx_ok {
+                println!("trying buy");
+                println!("slippage: {:?}", slippage);
+                let tx_result = web3m
+                    .swap_eth_for_exact_tokens(
+                        account,
+                        router_address,
+                        value,
+                        &path_address,
+                        slippage,
+                    )
+                    .await;
+
+                if tx_result.is_ok() {
+                    println!("BUY tx_id: {:?}", tx_result.unwrap());
+                } else {
+                    println!("TradingNotEnabled");
+                    slippage += 1;
+                }
+            }
+        }
+    }
+
     Ok(())
-}
-
-async fn get_token_reserves(
-    web3m: Web3Manager,
-    lp_pair_factory_instance: Contract<Http>,
-) -> (U256, U256, U256) {
-    let lp_pair_reserves: (Uint, Uint, Uint) = web3m
-        .query_contract(&lp_pair_factory_instance, "getReserves", ())
-        .await
-        .unwrap();
-    println!("lp_pair_reserves: {:?}", lp_pair_reserves);
-    lp_pair_reserves
 }
 
 async fn init_web3_connection() -> Web3Manager {
