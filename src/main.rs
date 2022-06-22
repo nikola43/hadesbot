@@ -2,8 +2,9 @@ use ethereum_abi::Abi;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs::File;
-use web3::types::{H160, H256};
+use web3::types::H160;
 
+use colored::Colorize;
 use web3_rust_wrapper::Web3Manager;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -31,8 +32,8 @@ async fn main() -> web3::Result<()> {
 
     let account: H160 = web3m.first_loaded_account();
 
-    let token_address = "0x84faf62eF06A038071acb87C74186f2CD85f0887";
-    let token_lp_address = "0x3174423695f51236822C8FB67C62d84056caE232";
+    let token_address = "0x3bF5f072Cd559244fD0fb288E401230b129B57A0";
+    let token_lp_address = "0x7B2B8f2C5dd4449D54a03CcF316462F15d56aA27";
     let router_address = "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3";
 
     let router_instance = web3m.init_router().await;
@@ -62,9 +63,12 @@ async fn main() -> web3::Result<()> {
         println!("has_liquidity: {:?}", has_liquidity);
 
         if has_liquidity {
+            println!("{}", "has_liquidity".green());
+
             while !buy_tx_ok {
-                println!("trying buy");
-                println!("slippage: {:?}", slippage);
+                //println!("trying buy");
+                //println!("slippage: {:?}", slippage);
+                println!("{}", "trying buy...".yellow());
                 let tx_result = web3m
                     .swap_eth_for_exact_tokens(
                         account,
@@ -76,7 +80,8 @@ async fn main() -> web3::Result<()> {
                     .await;
 
                 if tx_result.is_ok() {
-                    println!("BUY tx_id: {:?}", tx_result.unwrap());
+                    println!("{}", "Buy Tx Completed Successfully".green());
+                    println!("tx_id: {:?}", tx_result.unwrap());
                 } else {
                     println!("TradingNotEnabled");
                     slippage += 1;
