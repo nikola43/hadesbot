@@ -803,6 +803,7 @@ dependencies = [
  "primitive-types 0.11.1",
  "serde",
  "serde_json",
+ "textplots",
  "tokio",
  "web3",
  "web3_rust_wrapper",
@@ -2792,9 +2793,9 @@ dependencies = [
 
 [[package]]
 name = "web3_rust_wrapper"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9e9c2294310c2fad1c9b957a56d66708c2cc6b25c95376238412a6bb80b334e"
+checksum = "5af8e9a9b93f7b8fc10326ca2fedef9d96846d76683636f7f3274777a7e8df5a"
 dependencies = [
  "chrono",
  "clearscreen",
