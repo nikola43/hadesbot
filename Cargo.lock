@@ -2793,9 +2793,9 @@ dependencies = [
 
 [[package]]
 name = "web3_rust_wrapper"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5af8e9a9b93f7b8fc10326ca2fedef9d96846d76683636f7f3274777a7e8df5a"
+checksum = "73ae07f997aeeb1e7520e1271b25c341728e03a39a6d5c6618ffea01d70126ba"
 dependencies = [
  "chrono",
  "clearscreen",
