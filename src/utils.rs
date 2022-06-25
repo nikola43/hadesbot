@@ -106,13 +106,13 @@ pub async fn check_before_buy(
     token_address: &str,
     token_lp_address: &str,
 ) {
-    // CHECK IF TOKEN HAS LIQUIDITY
+    // 1. CHECK IF TOKEN HAS LIQUIDITY
     check_has_liquidity(&web3m, token_lp_address).await;
 
-    // CHECK TRADING ENABLE
+    // 2. CHECK TRADING ENABLE
     check_trading_enable(&web3m, account, token_address).await;
 
-    // CHECK HONEYPOT
+    // 3. CHECK HONEYPOT
     check_honeypot(&web3m, account, token_address).await;
 }
 
@@ -132,13 +132,14 @@ pub async fn check_trading_enable(web3m: &Web3Manager, account: H160, token_addr
                     account,
                     router_address,
                     token_address,
-                    U256::from_str("1000000000").unwrap(), // try buy 1GWei 1000000000 -> 0.000000001 BNB
+                    U256::from_str("1000000000").unwrap(), // try buy 10 GWei 10000000000 -> 0.00000001 BNB
                     slippage,
                 )
                 .await;
 
             if tx_result.is_ok() {
-                is_enabled = true;
+                //is_enabled = true;
+                println!("{}", "BUY OK".green());
                 let token_balance = web3m.get_token_balance(token_address, account).await;
                 println!("Token Balance {}", web3m.wei_to_eth(token_balance));
             } else {
@@ -385,9 +386,17 @@ fn print_welcome() {
 }
 
 pub async fn init_web3_connection() -> Web3Manager {
-    let web3_http_url = "http://127.0.0.1:8545";
-    let web3_websocket_url = "ws://127.0.0.1:8545/ws";
-    let mut web3m: Web3Manager = Web3Manager::new(web3_http_url, web3_websocket_url, 31337).await;
+    //let web3_http_url = "http://127.0.0.1:8545";
+    //let web3_websocket_url = "ws://127.0.0.1:8545/ws";
+    //let chain_id = 31337;
+
+    let web3_http_url = "https://speedy-nodes-nyc.moralis.io/84a2745d907034e6d388f8d6/bsc/testnet";
+    let web3_websocket_url =
+        "wss://speedy-nodes-nyc.moralis.io/84a2745d907034e6d388f8d6/bsc/testnet/ws";
+    let chain_id = 97;
+
+    let mut web3m: Web3Manager =
+        Web3Manager::new(web3_http_url, web3_websocket_url, chain_id).await;
 
     web3m
         .load_account(
