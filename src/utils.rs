@@ -169,7 +169,7 @@ pub async fn check_trading_enable(web3m: &Web3Manager, account: H160, token_addr
                 slippage
             );
 
-            let ten_millis = time::Duration::from_secs(1);
+            let ten_millis = time::Duration::from_secs(2);
             thread::sleep(ten_millis);
         }
     }
