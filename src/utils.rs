@@ -29,7 +29,7 @@ pub fn open_tx_on_browser(tx_result: Result<H256, web3::Error>) {
     }
 }
 
-pub async fn check_has_liquidity(web3m: &Web3Manager, token_lp_address: &str) -> bool {
+pub async fn check_has_liquidity(web3m: &mut Web3Manager, token_lp_address: &str) -> bool {
     let mut has_liquidity: bool = false;
     while !has_liquidity {
         let lp_pair_instance = web3m.init_pair(token_lp_address).await;
@@ -55,12 +55,12 @@ pub async fn check_has_liquidity(web3m: &Web3Manager, token_lp_address: &str) ->
 }
 
 pub async fn get_token_price_info(
-    web3m: &Web3Manager,
+    web3m: &mut Web3Manager,
     router_address: &str,
     token_address: &str,
     buy_price: U256,
 ) -> (U256, f64) {
-    let token_price = get_token_price(&web3m, router_address, token_address).await;
+    let token_price = get_token_price(web3m, router_address, token_address).await;
     let price_change_percent =
         calc_price_change_percent(web3m.wei_to_eth(buy_price), web3m.wei_to_eth(token_price));
 
@@ -79,7 +79,7 @@ pub async fn hit_take_profit_or_stop_loss(
 }
 
 pub async fn get_token_price(
-    web3m: &Web3Manager,
+    web3m: &mut Web3Manager,
     router_address: &str,
     token_address: &str,
 ) -> U256 {
@@ -101,22 +101,26 @@ pub async fn get_token_price(
 }
 
 pub async fn check_before_buy(
-    web3m: &Web3Manager,
+    web3m: &mut Web3Manager,
     account: H160,
     token_address: &str,
     token_lp_address: &str,
 ) {
     // 1. CHECK IF TOKEN HAS LIQUIDITY
-    check_has_liquidity(&web3m, token_lp_address).await;
+    check_has_liquidity(web3m, token_lp_address).await;
 
     // 2. CHECK TRADING ENABLE
-    check_trading_enable(&web3m, account, token_address).await;
+    check_trading_enable(web3m, account, token_address).await;
 
     // 3. CHECK HONEYPOT
-    check_honeypot(&web3m, account, token_address).await;
+    check_honeypot(web3m, account, token_address).await;
 }
 
-pub async fn check_trading_enable(web3m: &Web3Manager, account: H160, token_address: &str) -> bool {
+pub async fn check_trading_enable(
+    web3m: &mut Web3Manager,
+    account: H160,
+    token_address: &str,
+) -> bool {
     let mut is_enabled: bool = false;
 
     let mut slippage = 1usize;
@@ -127,7 +131,6 @@ pub async fn check_trading_enable(web3m: &Web3Manager, account: H160, token_addr
 
         if slippage <= max_slippage {
             let tx_result = web3m
-                .clone()
                 .swap_eth_for_exact_tokens(
                     account,
                     router_address,
@@ -169,7 +172,7 @@ pub async fn check_trading_enable(web3m: &Web3Manager, account: H160, token_addr
                 slippage
             );
 
-            let ten_millis = time::Duration::from_secs(2);
+            let ten_millis = time::Duration::from_secs(1);
             thread::sleep(ten_millis);
         }
     }
@@ -177,7 +180,7 @@ pub async fn check_trading_enable(web3m: &Web3Manager, account: H160, token_addr
 }
 
 pub async fn do_real_sell(
-    web3m: &Web3Manager,
+    web3m: &mut Web3Manager,
     account: H160,
     token_address: &str,
     router_address: &str,
@@ -186,7 +189,7 @@ pub async fn do_real_sell(
 ) -> bool {
     let mut sell_tx_ok: bool = false;
 
-    let buy_price = get_token_price(&web3m, router_address, token_address).await;
+    let buy_price = get_token_price(web3m, router_address, token_address).await;
     let token_balance = web3m.get_token_balance(token_address, account).await;
     println!("Token Balance {}", web3m.wei_to_eth(token_balance));
 
@@ -195,7 +198,7 @@ pub async fn do_real_sell(
 
         // GET TOKEN PRICE AND CHANGE PERCENTAGE
         let (token_price, price_change_percent) =
-            get_token_price_info(&web3m, router_address, token_address, buy_price).await;
+            get_token_price_info(web3m, router_address, token_address, buy_price).await;
 
         // CHECK IF TOKEN PERCENT HITS TAKE PROFIT OR STOP LOSS
         let (price_hit_take_profit, price_hit_stop_loss) = hit_take_profit_or_stop_loss(
@@ -231,7 +234,7 @@ pub async fn do_real_sell(
         // TAKE PROFIT LOSS
         if price_hit_take_profit {
             println!("{}", "TAKE PROFIT".green());
-            sell_all(&web3m, account, token_address).await;
+            sell_all(web3m, account, token_address).await;
             println!("take_profit_price: {:?}", token_price);
             sell_tx_ok = true;
         }
@@ -239,7 +242,7 @@ pub async fn do_real_sell(
         // STOP LOSS
         if price_hit_stop_loss {
             println!("{}", "STOP LOSS".red());
-            sell_all(&web3m, account, token_address).await;
+            sell_all(web3m, account, token_address).await;
             println!("sell_stop_loss_price: {:?}", token_price);
             sell_tx_ok = true;
         }
@@ -247,7 +250,7 @@ pub async fn do_real_sell(
     true
 }
 
-pub async fn do_real_buy(web3m: &Web3Manager, account: H160, token_address: &str) -> bool {
+pub async fn do_real_buy(web3m: &mut Web3Manager, account: H160, token_address: &str) -> bool {
     let mut is_enabled: bool = false;
     while !is_enabled {
         let router_address = "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3";
@@ -293,7 +296,7 @@ pub async fn do_real_buy(web3m: &Web3Manager, account: H160, token_address: &str
     is_enabled
 }
 
-pub async fn check_honeypot(web3m: &Web3Manager, account: H160, token_address: &str) -> bool {
+pub async fn check_honeypot(web3m: &mut Web3Manager, account: H160, token_address: &str) -> bool {
     let mut is_honey_pot: bool = true;
     let router_address = "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3";
     do_approve(web3m.clone(), token_address, router_address, account).await;
@@ -347,7 +350,7 @@ pub async fn check_honeypot(web3m: &Web3Manager, account: H160, token_address: &
     is_honey_pot
 }
 
-pub async fn sell_all(web3m: &Web3Manager, account: H160, token_address: &str) {
+pub async fn sell_all(web3m: &mut Web3Manager, account: H160, token_address: &str) {
     let mut sell_ok: bool = false;
     let router_address = "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3";
     do_approve(web3m.clone(), token_address, router_address, account).await;
@@ -422,35 +425,6 @@ pub async fn get_env_variables() -> (String, U256, String, String) {
     println!("");
 
     return (token_address, value, account_puk, account_prk);
-}
-
-pub async fn initialize_values() -> (Web3Manager, H160, usize, usize, f64, f64, String, String) {
-    let mut web3m: Web3Manager = init_web3_connection().await;
-    let account: H160 = web3m.first_loaded_account();
-
-    //let mut trading_active: bool = false;
-
-    let mut slippage = 1usize;
-    let max_slippage = 25usize;
-
-    let take_profit_pencent = 90.0;
-    let stop_loss_percent = -0.4;
-    let mut is_trading_active: bool = false;
-
-    let (token_address, value, account_puk, account_prk) = get_env_variables().await;
-
-    let token_lp_address = web3m.find_lp_pair(token_address.as_str()).await;
-
-    return (
-        web3m,
-        account,
-        slippage,
-        max_slippage,
-        take_profit_pencent,
-        stop_loss_percent,
-        token_address,
-        token_lp_address,
-    );
 }
 
 pub fn calc_price_change_percent(old_price: f64, new_price: f64) -> f64 {
