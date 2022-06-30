@@ -71,10 +71,11 @@ pub async fn hit_take_profit_or_stop_loss(
     price_change_percent: f64,
     take_profit_pencent: f64,
     stop_loss_percent: f64,
-) -> (bool, bool) {
+) -> (bool, bool,bool) {
     (
         price_change_percent > take_profit_pencent,
         price_change_percent < stop_loss_percent,
+        price_change_percent < stop_loss_percent
     )
 }
 
@@ -201,7 +202,7 @@ pub async fn do_real_sell(
             get_token_price_info(web3m, router_address, token_address, buy_price).await;
 
         // CHECK IF TOKEN PERCENT HITS TAKE PROFIT OR STOP LOSS
-        let (price_hit_take_profit, price_hit_stop_loss) = hit_take_profit_or_stop_loss(
+        let (price_hit_take_profit,price_hit_take_profit_ath, price_hit_stop_loss) = hit_take_profit_or_stop_loss(
             price_change_percent,
             take_profit_pencent,
             stop_loss_percent,
@@ -221,15 +222,15 @@ pub async fn do_real_sell(
             price_change_percent
         );
 
-        /*
+      
         // STOP ATH
-        if price_hit_take_profit {
+        if price_hit_take_profit_ath {
             println!("{}", "TAKE PROFIT".green());
-            sell_all(&web3m, account, token_address).await;
+            sell_all(web3m, account, token_address).await;
             println!("take_profit_price: {:?}", token_price);
             sell_tx_ok = true;
         }
-        */
+        
 
         // TAKE PROFIT LOSS
         if price_hit_take_profit {
